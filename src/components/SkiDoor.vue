@@ -20,7 +20,7 @@ defineProps({
       sphysx-body="type: kinematic; emitCollisionEvents: true"
       emit-when-near="distance: 3"
       @near="$emit('doorPassed', 1)"
-      :sound="`src: url(assets/sound${sound}.mp3); on: near`"
+      :sound="`src: #sound${sound}; on: near`"
     >
       <a-text
         :text="`value: Porte ${nb}/${nbDoors}; align: center; font: roboto; width: 13; color: white`"

@@ -1,23 +1,21 @@
 <script setup>
-import { get } from "lodash-es";
 import { getFromLocalStorage, saveToLocalStorage } from "../utils/storeRead.js";
 
-setTimeout(function () {
-  const scores = getFromLocalStorage("scoreboard");
+const scores = getFromLocalStorage("scoreboard");
 
-  if (scores) {
-  } else {
-    saveToLocalStorage("scoreboard", ["90:00:00", "90:00:00", "90:00:00"]);
-  }
-  const scoreboardText = document.querySelectorAll(".scoreboard-text");
+if (scores) {
+} else {
+  saveToLocalStorage("scoreboard", ["90:00:00", "90:00:00", "90:00:00"]);
+}
 
-  scoreboardText.forEach((el) => {
-    el.setAttribute(
-      "value",
-      `1:\t${scores[0]}\n2:\t${scores[1]}\n3:\t${scores[2]}\n`
-    );
-  });
-}, 2000);
+const scoreboardText = document.querySelectorAll(".scoreboard-text");
+
+scoreboardText.forEach((el) => {
+  el.setAttribute(
+    "value",
+    `1:\t${scores[0]}\n2:\t${scores[1]}\n3:\t${scores[2]}\n`
+  );
+});
 </script>
 
 <template>
@@ -25,7 +23,7 @@ setTimeout(function () {
     <a-text
       id="scoreboard-text"
       class="scoreboard-text"
-      value="1:\t\n2:\t\n3:\t"
+      value="`1:\t\n2:\t\n3:\t\n`"
       position="0 4 9.3"
       line-height="60"
       color="white"

@@ -27,7 +27,7 @@ function teleport() {
       sphysx-body="type: kinematic; emitCollisionEvents: true"
       emit-when-near="distance: 2"
       @near="teleport()"
-      sound="src: url(assets/sound1.mp3); on: near"
+      sound="src: #sound1; on: near"
     >
       <a-text
         :text="`value: Recommencer la partie; align: center; font: roboto; width: 8; color: white`"

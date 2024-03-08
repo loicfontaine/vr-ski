@@ -2,187 +2,30 @@
 import { ref } from "vue";
 
 import TheCameraRig from "./TheCameraRig.vue";
-import SkiDoor from "./SkiDoor.vue";
+
 import Scoreboard from "./Scoreboard.vue";
 import "../aframe/bind-rotation.js";
 import "../aframe/bind-position.js";
 import "../aframe/chronometer.js";
-import { saveToLocalStorage, getFromLocalStorage } from "../utils/storeRead.js";
+import Race from "./Race.vue";
 import { randomNb } from "../utils/randomNb.js";
-import Teleporter from "./Teleporter.vue";
+import TreesAndRocks from "./TreesAndRocks.vue";
 
 defineProps({
   scale: Number,
   overlaySelector: String,
 });
 
+const nbDoors = 7;
+const nbTree = nbDoors * 7;
+const nbRock = nbDoors * 5;
+
 const allAssetsLoaded = ref(false);
-const nbDoors = 8;
-const nbTree = 70;
-const nbRock = 20;
-const doorsPosition = ["0 0 0", "0 0 4"];
-
+let doorsPosition;
+const raceLoaded = ref(false);
 let animationStart = false;
-//query
-
 const head = document.querySelector("#head");
-
-setTimeout(() => {
-  plantTree();
-  plantRock();
-}, 500);
-
-function setPositions() {
-  const position = document
-    .querySelector(`.door-${nbDoors - 1}`)
-    .getAttribute("position");
-
-  console.log(`${position.x} 0 ${position.z}`);
-  const scoreboard = document.querySelector("#scoreboard-end");
-
-  const scoreboardPosition = `${position.x - 4} 0 ${position.z - 8}`;
-  scoreboard.setAttribute("position", scoreboardPosition);
-  scoreboard.setAttribute("visible", "true");
-
-  const teleporterPosition = `${position.x + 4} 0 ${position.z - 12.3}`;
-  const teleporter = document.querySelector("#teleporter");
-  const penguinArmy = document.querySelector("#penguin-army");
-  const penguinPosition = `${position.x - 6} 0 ${position.z - 4}`;
-  teleporter.setAttribute("position", teleporterPosition);
-  teleporter.setAttribute("visible", "true");
-
-  penguinArmy.setAttribute("position", penguinPosition);
-  penguinArmy.setAttribute("rotation", "0 60 0");
-  penguinArmy.setAttribute("visible", "true");
-
-  doorsPosition.push(`${position.x - 4} 0 ${position.z - 12.3}`);
-  doorsPosition.push(teleporterPosition);
-  doorsPosition.push(penguinPosition);
-}
-
-function getDoorPosition(index) {
-  if (index === 0) {
-    doorsPosition.push("0 0 -5");
-    return `0 0 -5`;
-  }
-  const x = randomNb(-13, 13);
-  const z = index * -15 + randomNb(-2, 2);
-  doorsPosition.push(`${x} 0 ${z}`);
-  return `${x} 0 ${z}`;
-}
-
-function plantTree() {
-  for (let i = 0; i < nbTree; i++) {
-    const tree = document.createElement("a-entity");
-    tree.setAttribute("gltf-model", "#tree-asset");
-
-    const x = randomNb(-25, 25);
-    const z = randomNb(-150, 25);
-    const scale = randomNb(3, 13) / 1000;
-    tree.setAttribute("position", `${x} 0 ${z}`);
-    tree.setAttribute("scale", `${scale} ${scale} ${scale}`);
-
-    if (checkIfNothing(x, z)) {
-      document.querySelector("a-scene").appendChild(tree);
-    }
-  }
-}
-
-function plantRock() {
-  for (let i = 0; i < nbRock; i++) {
-    const rock = document.createElement("a-entity");
-    rock.setAttribute("gltf-model", "#rock-asset");
-
-    const x = randomNb(-25, 25);
-    const z = randomNb(-150, 25);
-    const rotation = randomNb(0, 180);
-    const scale = randomNb(50, 150) / 100;
-    rock.setAttribute("position", `${x} 0 ${z}`);
-    rock.setAttribute("scale", `${scale} ${scale} ${scale}`);
-    rock.setAttribute("rotation", `0 ${rotation} 0`);
-
-    if (checkIfNothing(x, z)) {
-      document.querySelector("a-scene").appendChild(rock);
-    }
-  }
-}
-
-function checkIfNothing(x, z) {
-  let checked = true;
-  doorsPosition.forEach((pos) => {
-    pos = pos.split(" ");
-    const diffX = x - pos[0];
-    const diffZ = z - pos[2];
-
-    if (diffX < 5 && diffX > -5 && diffZ < 5 && diffZ > -5) {
-      console.log("too close");
-      checked = false;
-    }
-  });
-
-  return checked;
-}
-
-let doorPassedCount = 0;
-
-function doorPassed(index) {
-  doorPassedCount++;
-  console.log("door passed", doorPassedCount);
-  if (index === 0) {
-    firstDoorPassed();
-  } else if (index === nbDoors - 1) {
-    lastDoorPassed();
-  }
-}
-
-function firstDoorPassed() {
-  setPositions();
-  doorPassedCount = 1;
-  document.querySelectorAll(".door-timer").forEach((el) => {
-    if (el.getAttribute("chronometer")) {
-      el.removeAttribute("chronometer");
-    }
-    el.setAttribute("chronometer", "");
-  });
-}
-
-function lastDoorPassed() {
-  console.log("doorPassedCount", doorPassedCount);
-  console.log("nbDoors", nbDoors);
-  if (doorPassedCount < nbDoors) return;
-  console.log("last door passed");
-  document.querySelectorAll(".door-timer").forEach((el) => {
-    el.setAttribute("chronometer", "stop", "true");
-  });
-  handleScore();
-  const penguinArmy = document.querySelector("#penguin-army");
-  penguinArmy.setAttribute(
-    "sound",
-    "src: url(assets/sound3.mp3); autoplay: true"
-  );
-}
-
-function handleScore() {
-  const myScore = document.querySelector(".door-timer").getAttribute("value");
-
-  const scoreboard = getFromLocalStorage("scoreboard");
-  console.log("myScore", myScore);
-  if (myScore < scoreboard[2]) {
-    scoreboard.push(myScore);
-    scoreboard.sort();
-    scoreboard.splice(3, 1);
-    saveToLocalStorage("scoreboard", scoreboard);
-  }
-  const newScoreboard = getFromLocalStorage("scoreboard");
-  const scoreboardText = document.querySelectorAll(".scoreboard-text");
-
-  scoreboardText.forEach((el) => {
-    el.setAttribute(
-      "value",
-      `1:\t${newScoreboard[0]}\n2:\t${newScoreboard[1]}\n3:\t${newScoreboard[2]}\nVotre score: ${myScore}`
-    );
-  });
-}
+//query
 
 const rightBoxes = {
   top: ref(0),
@@ -264,6 +107,11 @@ window.addEventListener("keydown", (e) => {
 
 window.addEventListener("triggerdown", brake);
 
+function getDoorPosition(doors) {
+  doorsPosition = doors;
+  raceLoaded.value = true;
+}
+
 function animatePoles() {
   animationStart = true;
   const poles = document.querySelector("#poles");
@@ -311,13 +159,6 @@ function animateSkis() {
     "property: position; to: 0.5 0.1 1; dur: 500"
   );
 }
-
-function isItlastDoor(index) {
-  if (index === nbDoors - 1) {
-    return 2;
-  }
-  return 1;
-}
 </script>
 
 <template>
@@ -350,16 +191,34 @@ function isItlastDoor(index) {
         id="penguin-asset"
         src="assets/dancing_penguin.glb"
       ></a-asset-item>
+      <a-asset-item
+        id="sound1"
+        response-type="arraybuffer"
+        src="assets/sound1.mp3"
+        preload="auto"
+      ></a-asset-item>
+      <a-asset-item
+        id="sound2"
+        response-type="arraybuffer"
+        src="assets/sound2.mp3"
+        preload="auto"
+      ></a-asset-item>
+      <a-asset-item
+        id="sound3"
+        response-type="arraybuffer"
+        src="assets/sound3.mp3"
+        preload="auto"
+      ></a-asset-item>
     </a-assets>
 
     <template v-if="allAssetsLoaded">
       <a-plane
         position="0 0 -4"
         rotation="-90 0 0"
-        width="100"
-        height="500"
+        width="200"
+        height="800"
         color="#FFFFFF"
-        src="#snow"
+        material="src: #snow; repeat: 1 1"
       >
       </a-plane>
       <a-entity
@@ -403,54 +262,23 @@ function isItlastDoor(index) {
           rotation="-90 0 0"
         ></a-entity>
       </a-entity>
-      <a-entity id="penguin-army" visible="false">
-        <a-entity
-          gltf-model="#penguin-asset"
-          scale="0.006 0.006 0.006"
-          position="0 0 -3"
-          animation-mixer
-        ></a-entity>
-        <a-entity
-          gltf-model="#penguin-asset"
-          scale="0.006 0.006 0.006"
-          position="-2 0 -3"
-          animation-mixer
-        ></a-entity>
-        <a-entity
-          gltf-model="#penguin-asset"
-          scale="0.006 0.006 0.006"
-          position="2 0 -3"
-          animation-mixer
-        ></a-entity>
-        <a-entity
-          gltf-model="#penguin-asset"
-          scale="0.006 0.006 0.006"
-          position="1 0 0"
-          animation-mixer
-        ></a-entity>
-        <a-entity
-          gltf-model="#penguin-asset"
-          scale="0.006 0.006 0.006"
-          position="-1 0 0"
-          animation-mixer
-        ></a-entity>
-        <a-entity
-          gltf-model="#penguin-asset"
-          scale="0.006 0.006 0.006"
-          position="3 0 0"
-          animation-mixer
-        ></a-entity>
-      </a-entity>
 
+      <TreesAndRocks
+        v-if="raceLoaded"
+        :doorsPosition="doorsPosition"
+        :nbTree="nbTree"
+        :nbRock="nbRock"
+      />
+      />
       <a-sky color="#023e8a"></a-sky>
+      <a-entity
+        gltf-model="#tree-asset"
+        scale="0.006 0.006 0.006"
+        position="5 0 4"
+      ></a-entity>
+      <a-entity gltf-model="#rock-asset" position="-5 0 0"></a-entity>
       <Scoreboard position="0 0 0" rotation="0 90 0"></Scoreboard>
-      <Scoreboard
-        id="scoreboard-end"
-        rotation="0 180 0"
-        visible="false"
-      ></Scoreboard>
-      <Teleporter id="teleporter" visible="false" position="0 20 0">
-      </Teleporter>
+      <Race :nbDoors="nbDoors" @doors-position="getDoorPosition"></Race>
     </template>
 
     <a-entity bind-rotation="target: #head" bind-position="target: #head;">
@@ -479,18 +307,6 @@ function isItlastDoor(index) {
       >
       </a-box>
     </a-entity>
-
-    <template v-for="(_, index) in nbDoors">
-      <SkiDoor
-        :nb="index + 1"
-        :position="getDoorPosition(index)"
-        @door-passed="doorPassed(index)"
-        :class="`door-${index}`"
-        :nb-doors="nbDoors"
-        :sound="isItlastDoor(index)"
-      />
-    </template>
-
     <TheCameraRig />
   </a-scene>
 </template>
